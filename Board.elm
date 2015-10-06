@@ -2,13 +2,17 @@ module Board (init, getNeighbours, isNeighbour) where
 
 import Array exposing (Array, initialize)
 import Set exposing (Set, member)
+import Random exposing (Seed)
 
 import Tile exposing (Model)
 
 -- initialize : Int -> (Int -> a) -> Array a
-init : Int -> Int -> Set Int -> Array Model
-init r c mines =
+init : Int -> Int -> Seed -> Array Model
+init r c seed =
     let
+        total = r * c
+        mines = Set.fromList <| fst <| Random.generate (intList (total // 5) total) seed
+        -- mines = Set.fromList <| fst <| Random.generate (intList 5 (r*c)) (Random.initialSeed 54784)
         makeSquare : Set Int -> Int -> Model
         makeSquare mines i =
             let
@@ -23,7 +27,10 @@ init r c mines =
 
     in initialize (r * c) (makeSquare mines)
 
-
+intList : Int -> Int -> Random.Generator (List Int)
+intList n m =
+    Random.list n (Random.int 0 m)
+-- generate : Generator a -> Seed -> ( a, Seed )
 
 getNeighbours : Int -> Int -> List Int
 getNeighbours cols i =

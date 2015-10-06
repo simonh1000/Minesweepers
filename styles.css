@@ -21,3 +21,9 @@ span {
     text-align: center;
     padding-top: 12px;
 }
+
+#board p {
+    background-color: white;
+    margin: 0;
+    padding: 5px;
+}
