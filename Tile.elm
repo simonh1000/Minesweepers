@@ -1,4 +1,4 @@
-module Tile (Model, ID, Action, init, update, view) where
+module Tile (Model, ID, Action(..), init, update, view) where
 
 import Html exposing (..)
 import Html.Attributes exposing (style, src, class)
@@ -33,8 +33,8 @@ type Action = Reveal | Mark
 update : Action -> Model -> Model
 update action model =
   case action of
-    Reveal -> { model | isRevealed <- True }
-    Mark   -> { model | isMarked <- True }
+    Reveal -> { model | isRevealed <- True, isMarked <- False }
+    Mark   -> if model.isRevealed then model else { model | isMarked <- True }
 
 
 -- VIEW
@@ -50,7 +50,7 @@ onClick address =
 view : Signal.Address Action -> Model -> Html
 view address model =
     if | model.isMarked
-            -> span [class "marked"] [ text "?" ]
+            -> span [class "marked", onClick address] [ text "?" ]
        | not model.isRevealed
             -> span [covered, onClick address] []
        | model.isRevealed && model.isMine
@@ -66,7 +66,7 @@ covered =
     -- , ("display", "inline-block")
     -- , ("width", "50px")
     -- , ("height", "46px")
-    , ("cursor", "pointer")
+    -- , ("cursor", "pointer")
     ]
 
 marked : Attribute

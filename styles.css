@@ -5,6 +5,7 @@ body {
 
 #board {
     margin: auto;
+    background-color: white;
 }
 
 span {
@@ -16,6 +17,7 @@ span {
     border: 1px solid white;
     font-size: 20px;
     text-align: center;
+    cursor: pointer;
 }
 
 .revealed {
@@ -23,12 +25,11 @@ span {
     padding-top: 12px;
 }
 .marked {
-    background-color: #blue;
+    background-color: white;
     padding-top: 12px;
 }
 
 #board p {
-    background-color: white;
     margin: 0;
     padding: 5px;
 }

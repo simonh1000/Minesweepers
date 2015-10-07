@@ -7,31 +7,28 @@ import Random exposing (Seed)
 
 import Tile exposing (Model)
 
--- initialize : Int -> (Int -> a) -> Array a
 init : Int -> Int -> Seed -> Array Model
 init r c seed =
     let
         total = r * c
+        -- generate : Generator a -> Seed -> ( a, Seed )
+        -- using a set removes duplicates
         mines = Set.fromList <| fst <| Random.generate (intList (total // 5) total) seed
-        -- mines = Set.fromList <| fst <| Random.generate (intList 5 (r*c)) (Random.initialSeed 54784)
         makeSquare : Set Int -> Int -> Model
         makeSquare mines i =
             let
                 neighbours = List.filter (isNeighbour r c i) (getNeighbours r c i)
                 calcThreat = List.length <| List.filter (\n -> Set.member n mines) neighbours
             in Tile.init i (member i mines) calcThreat
-                -- { id = i
-                -- , isRevealed = False
-                -- , isMine = member i mines
-                -- , threatCount = calcThreat
-                -- }
 
+    -- initialize : Int -> (Int -> a) -> Array a
     in Array.initialize (r * c) (makeSquare mines)
+
 
 intList : Int -> Int -> Random.Generator (List Int)
 intList n m =
     Random.list n (Random.int 0 m)
--- generate : Generator a -> Seed -> ( a, Seed )
+
 
 getNeighbours : Int -> Int -> Int -> List Int
 getNeighbours r c i =
@@ -42,6 +39,7 @@ getNeighbours r c i =
             , c - 1, c, c + 1
             ]
     in filter (\x -> 0 <= x && x < r * c) <| map (\x -> i+x) deltas
+
 
 isNeighbour : Int -> Int -> Int -> Int -> Bool
 isNeighbour rows cols i c =
