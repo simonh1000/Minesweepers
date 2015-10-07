@@ -14,12 +14,16 @@ span {
     display: inline-block;
     vertical-align: top;
     border: 1px solid white;
+    font-size: 20px;
+    text-align: center;
 }
 
 .revealed {
     background-color: #eee;
-    font-size: 20px;
-    text-align: center;
+    padding-top: 12px;
+}
+.marked {
+    background-color: #blue;
     padding-top: 12px;
 }
 

@@ -12,7 +12,6 @@ type alias ID = Int
 type alias Model =
     { id : ID
     , isRevealed : Bool
-    , isMarked : Bool
     , isMine : Bool
     , threatCount : Int
     }
@@ -21,38 +20,31 @@ init : Int -> Bool -> Int -> Model
 init i m t =
     { id = i
     , isRevealed = False
-    , isMarked = False
     , isMine = m
     , threatCount = t
     }
 
 -- UPDATE
 
-type Action = Reveal | Mark
+type Action = Reveal
 
 update : Action -> Model -> Model
 update action model =
   case action of
     Reveal -> { model | isRevealed <- True }
-    Mark   -> { model | isMarked <- True }
 
 
 -- VIEW
-
 -- on : String -> Decoder a -> (a -> Message) -> Attribute
-onClick : Signal.Address Action -> Attribute
+
+onClick : Signal.Address a -> Attribute
 onClick address =
-    on
-        "click"
-        ("ctrlKey" := bool)
-        (\r -> Signal.message address (if r then Mark else Reveal))
+    on "click" ("ctrlKey" := bool) (\r -> Signal.message address r)
 
 view : Signal.Address Action -> Model -> Html
 view address model =
-    if | model.isMarked
-            -> span [class "marked"] [ text "?" ]
-       | not model.isRevealed
-            -> span [covered, onClick address] []
+    if | not model.isRevealed
+            -> span [covered, onClick address Reveal] []
        | model.isRevealed && model.isMine
             -> img [imgStyle, src "./bomb.png"] []
        | otherwise
@@ -63,17 +55,7 @@ covered : Attribute
 covered =
   style
     [ ("background-color", "red")
-    -- , ("display", "inline-block")
-    -- , ("width", "50px")
-    -- , ("height", "46px")
-    , ("cursor", "pointer")
-    ]
-
-marked : Attribute
-marked =
-  style
-    [ ("background-color", "blue")
-    , ("display", "inline-block")
+    , ("display", "block")
     , ("width", "50px")
     , ("height", "46px")
     , ("cursor", "pointer")

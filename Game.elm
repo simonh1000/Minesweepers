@@ -2,14 +2,13 @@ module Game (init, update, view) where
 
 import Html exposing (..)
 import Html.Attributes exposing (type', style, src, rel, href, id)
-import Set exposing (Set, singleton, union, member)
 import Array exposing (Array, get, set)
 import List exposing (foldl, filter)
 import Effects exposing (Effects)
 import Random exposing (Seed)
 
-import Tile exposing (..)
-import Board exposing (getNeighbours', isNeighbour)
+import Tile exposing (Action)
+import Board exposing (getNeighbours, isNeighbour)
 
 -- MODEL
 
@@ -45,22 +44,26 @@ updateInner action model =
     then model
     else case action of
         Click i tileAction ->
+            case tileAction of
+                Reveal -> model
+                Mark -> model
             -- examine the tile clicked upon
-            let
-                (Just tile) = get i model.tiles
-            in if   | tile.isRevealed -> model -- already revealed
-                    | tile.isMine ->           -- mine --> Lose
-                        { model
-                        | game <- Lose
-                        , tiles <- Array.map (\t -> {t | isRevealed <- t.isRevealed || t.isMine }) model.tiles
-                        }
-                    | otherwise ->
-                        let
-                            newTiles = List.foldl (explorer model) model.tiles [i]
-                        in  { model
-                            | game <- if (List.all (\t -> t.isRevealed || t.isMine) <| Array.toList newTiles) then Win else InPlay
-                            , tiles <- newTiles
-                            }
+            -- let
+            --     (Just tile) = get i model.tiles
+            -- in if   | tile.isRevealed -> model -- already revealed
+            --         | tile.isMine ->           -- mine --> Lose
+            --             { model |
+            --                   game <- Lose
+            --                 , tiles <- Array.map (\t -> if t.isRevealed || t.isMine then Tile.update tileAction t else t) model.tiles
+            --                 -- , tiles <- Array.map (\t -> {t | isRevealed <- t.isRevealed || t.isMine }) model.tiles
+            --             }
+            --         | otherwise ->
+            --             let
+            --                 newTiles = List.foldl (explorer model) model.tiles [i]
+            --             in  { model |
+            --                       game <- if (List.all (\t -> t.isRevealed || t.isMine) <| Array.toList newTiles) then Win else InPlay
+            --                     , tiles <- newTiles
+            --                 }
 
 -- explorer is passed list of next squares, including ones that might already have been explored
 explorer : Model -> (Int -> Array Tile.Model -> Array Tile.Model)
@@ -73,7 +76,7 @@ explorer model =
             then acc'
             else -- threatCount == 0, recurse further into map
                 let
-                    rawCandidates = getNeighbours' model.rows model.cols v
+                    rawCandidates = getNeighbours model.rows model.cols v
                     neighbouringCands = List.filter (isNeighbour model.rows model.cols v) rawCandidates
                 in List.foldl (explorer model) acc' neighbouringCands
 
@@ -98,6 +101,7 @@ view address model =
 viewTile : Signal.Address Action -> Tile.Model -> Html
 viewTile address tile =
   Tile.view (Signal.forwardTo address (Click tile.id)) tile
+
 
 gameStyle : Int -> Int -> Attribute
 gameStyle r c =
