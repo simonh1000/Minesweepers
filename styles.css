@@ -1,5 +1,6 @@
 body {
     background-image: url('sea.jpg');
+    font-family: sans-serif;
 }
 
 #board {

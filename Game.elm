@@ -3,13 +3,13 @@ module Game (init, update, view) where
 import Html exposing (..)
 import Html.Attributes exposing (type', style, src, rel, href, id)
 import Set exposing (Set, singleton, union, member)
-import Array exposing (Array, get)
+import Array exposing (Array, get, set)
 import List exposing (foldl, filter)
 import Effects exposing (Effects)
 import Random exposing (Seed)
 
 import Tile exposing (..)
-import Board exposing (getNeighbours, isNeighbour)
+import Board exposing (getNeighbours', isNeighbour)
 
 -- MODEL
 
@@ -40,54 +40,42 @@ update a m = (updateInner a m, Effects.none)
 
 updateInner : Action -> Model -> Model
 updateInner action model =
+    -- if game already over, do nothing
     if model.game == Win || model.game == Lose
     then model
     else case action of
         Click i tileAction ->
-            let (Just tile) = get i model.tiles
-            in if   | tile.isRevealed -> model
-                    | tile.isMine ->
+            -- examine the tile clicked upon
+            let
+                (Just tile) = get i model.tiles
+            in if   | tile.isRevealed -> model -- already revealed
+                    | tile.isMine ->           -- mine --> Lose
                         { model
                         | game <- Lose
                         , tiles <- Array.map (\t -> {t | isRevealed <- t.isRevealed || t.isMine }) model.tiles
                         }
                     | otherwise ->
                         let
-                            mapper tile =
-                                if member tile.id (tilesToReveal model (singleton i) (singleton i))
-                                then Tile.update tileAction tile
-                                else tile
-                            newTiles = Array.map mapper model.tiles
+                            newTiles = List.foldl (explorer model) model.tiles [i]
                         in  { model
                             | game <- if (List.all (\t -> t.isRevealed || t.isMine) <| Array.toList newTiles) then Win else InPlay
                             , tiles <- newTiles
                             }
 
--- on a blank reveal all surrounding squares, recursively
--- have ID,
--- from that return [ID - cols - 1, ID - cols, ID - cols + 1]
-
--- if square clicked has threatCount then this is the only one we will reveal
-
--- diff : Get the difference between the first set and the second. Keeps values that do not appear in the second set.
-tilesToReveal : Model -> Set Int -> Set Int -> Set Int
-tilesToReveal model tilesAcc cands =
-    let
-        go : Int -> Set Int -> Set Int
-        go v acc =
-            let (Just tile) = get v model.tiles
-            in if tile.threatCount /= 0
-                then acc
-                else
-                    let
-                        candidates =
-                            Set.fromList <| List.filter (isNeighbour model.rows model.cols v) (getNeighbours model.cols v)   -- [Int]
-                        frontier = Set.diff candidates acc
-                    in if Set.isEmpty frontier
-                        then acc
-                        else tilesToReveal model (union acc frontier) frontier
-
-    in Set.foldl go tilesAcc cands
+-- explorer is passed list of next squares, including ones that might already have been explored
+explorer : Model -> (Int -> Array Tile.Model -> Array Tile.Model)
+explorer model =
+    \v acc ->
+        let
+            (Just tile) = get v acc
+            acc' = set v {tile | isRevealed <- True} acc
+        in if tile.isRevealed || tile.threatCount /= 0
+            then acc'
+            else -- threatCount == 0, recurse further into map
+                let
+                    rawCandidates = getNeighbours' model.rows model.cols v
+                    neighbouringCands = List.filter (isNeighbour model.rows model.cols v) rawCandidates
+                in List.foldl (explorer model) acc' neighbouringCands
 
 -- VIEW
 
@@ -107,7 +95,6 @@ view address model =
                 ]
             ]
 
-
 viewTile : Signal.Address Action -> Tile.Model -> Html
 viewTile address tile =
   Tile.view (Signal.forwardTo address (Click tile.id)) tile
@@ -116,5 +103,4 @@ gameStyle : Int -> Int -> Attribute
 gameStyle r c =
   style
     [ ("width", (toString (c * 50)) ++ "px")
-    -- , ("height", (toString (r * 50)) ++ "px")
     ]

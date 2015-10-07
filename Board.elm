@@ -1,7 +1,8 @@
-module Board (init, getNeighbours, isNeighbour) where
+module Board (init, getNeighbours, getNeighbours', isNeighbour) where
 
-import Array exposing (Array, initialize)
+import List exposing (foldl, filter, map)
 import Set exposing (Set, member)
+import Array exposing (Array)
 import Random exposing (Seed)
 
 import Tile exposing (Model)
@@ -25,7 +26,7 @@ init r c seed =
                 , threatCount = calcThreat
                 }
 
-    in initialize (r * c) (makeSquare mines)
+    in Array.initialize (r * c) (makeSquare mines)
 
 intList : Int -> Int -> Random.Generator (List Int)
 intList n m =
@@ -43,6 +44,16 @@ getNeighbours cols i =
     , i + cols
     , i + cols + 1
     ]
+
+getNeighbours' : Int -> Int -> Int -> List Int
+getNeighbours' r c i =
+    let
+        deltas =
+            [ -c - 1, -c, -c + 1
+            , -1, 1
+            , c - 1, c, c + 1
+            ]
+    in filter (\x -> 0 <= x && x < r * c) <| map (\x -> i+x) deltas
 
 isNeighbour : Int -> Int -> Int -> Int -> Bool
 isNeighbour rows cols i c =
